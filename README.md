@@ -77,3 +77,13 @@ server = KeyServer("hkps://pgp.ext.selfnet.de",
                    "socks5h://localhost:5050"},
                    headers={"User-Agent": "Testing"})
 ```
+
+## Import key with gpgme python bindings
+
+```python
+import gpg
+
+with gpg.Context(armor=True, home_dir=HOME) as gnupg:
+    result = gnupg.op_import(key.key.encode('ascii'))
+
+```
