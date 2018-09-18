@@ -57,7 +57,6 @@ class Key(object):
             self.expiration_date = None
 
         self.revoked = self.disabled = self.expired = False
-        print(flags)
         if 'r' in flags:
             self.revoked = True
         if 'd' in flags:
