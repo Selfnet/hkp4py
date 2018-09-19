@@ -8,7 +8,10 @@ https://github.com/dgladkov/python-hkp/blob/master/hkp/client.py
 import sys
 from datetime import datetime
 import requests
-import urllib.parse
+try:
+    import urllib.parse as parse
+except ImportError:
+    import urlparse as parse
 from .utils import cached_property
 
 
@@ -107,7 +110,7 @@ class Identity(object):
     """
 
     def __init__(self, uid, creation_date, expiration_date, flags):
-        self.uid = urllib.parse.unquote(uid)
+        self.uid = parse.unquote(uid)
 
         if creation_date:
             self.creation_date = datetime.fromtimestamp(int(creation_date))
