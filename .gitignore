@@ -6,3 +6,6 @@ test.py
 # Ignore virtualenvs
 env/
 env2/
+hkp4py.egg-info/
+build/
+dist/
