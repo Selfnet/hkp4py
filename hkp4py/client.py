@@ -1,5 +1,5 @@
 """
-Python HKP procol client implementation based on current draft spec
+Python HKP protocol client implementation based on current draft spec
 http://tools.ietf.org/html/draft-shaw-openpgp-hkp-00
 
 Taken from: 
@@ -19,6 +19,7 @@ __all__ = ['Key', 'Identity', 'KeyServer']
 
 # Loosely taken from RFC2440 (http://tools.ietf.org/html/rfc2440#section-9.1)
 ALGORITHMS = {
+    0: 'unknown',
     1: 'RSA (Encrypt or Sign)',
     2: 'RSA Encrypt-Only',
     3: 'RSA Sign-Only',
@@ -27,6 +28,8 @@ ALGORITHMS = {
     18: 'Elliptic Curve',
     19: 'ECDSA',
     20: 'Elgamal (Encrypt or Sign)',
+    21: 'Reserved for Diffie-Hellman',
+    22: 'EdDSA',
 }
 
 
