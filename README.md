@@ -15,6 +15,14 @@ This library uses the requests module to get the keys.
 
 ## Intstall via [AUR](https://aur.archlinux.org/packages/python-hkp4py-git/)
 
+## Install via [PyPI](https://pypi.org/project/hkp4py/)
+
+```bash
+pip install hkp4py
+
+pip3 install hkp4py
+```
+
 ## KeyServer
 
 This object represents a keyserver using the hkp protocol.
