@@ -9,13 +9,14 @@ See:
 # To use a consistent encoding
 import os
 from os import path
+import io
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 
 HERE = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
+with io.open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
 __version__ = "0.2.0.0"
@@ -47,7 +48,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Beta',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
@@ -59,6 +60,8 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 3'
+        'Programming Language :: Python :: 2 :: 6'
+        'Programming Language :: Python :: 2 :: 7'
     ],
 
     # What does your project relate to?
