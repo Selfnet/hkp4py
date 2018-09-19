@@ -101,9 +101,9 @@ server = KeyServer("hkps://pgp.ext.selfnet.de",
 ## Import key with gpgme python bindings
 
 ```python
+from __future__ import absolute_import, unicode_literals
+
 import gpg
 
-with gpg.Context(armor=True, home_dir=HOME) as gnupg:
-    result = gnupg.op_import(key.key.encode('ascii'))
-
+result = gpg.Context().key_import(key.key.encode("utf-8"))
 ```
