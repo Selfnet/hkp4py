@@ -3,7 +3,17 @@
 A Library to get GPG/PGP keys from a Keyserver.
 This library uses the requests module to get the keys.
 
-## [AUR](https://aur.archlinux.org/packages/python-hkp4py-git/)
+## Tested Python Versions
+
+### Python 2.7
+
+* 2.7.15
+
+### Python 3
+
+* 3.7
+
+## Intstall via [AUR](https://aur.archlinux.org/packages/python-hkp4py-git/)
 
 ## KeyServer
 
