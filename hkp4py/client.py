@@ -104,15 +104,15 @@ class Key(object):
         response = requests.get(
             request_url, params=params, proxies=self.proxies, headers=self.headers)
         if response.ok:
-            # strip off encosing text or HTML. According to RFC headers MUST be
-            # always preverved, so we rely on them
+            # strip off enclosing text or HTML. According to RFC headers MUST be
+            # always preserved, so we rely on them
             response = response.text
             key = response.split(self._begin_header)[
                 1].split(self._end_header)[0]
             key = '{}{}{}'.format(self._begin_header, key, self._end_header)
             if blob:
                 # cannot use requests.content because of potential html
-                # provided by keyserver.
+                # provided by keyserver. (see above comment)
                 return key.encode("utf-8")
             else:
                 return key
