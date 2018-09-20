@@ -102,15 +102,17 @@ class Key(object):
         }
         request_url = '{}:{}/pks/lookup'.format(self.host, self.port)
         response = requests.get(
-            request_url, params=params, proxies=self.proxies, headers = self.headers)
+            request_url, params=params, proxies=self.proxies, headers=self.headers)
         if response.ok:
             # strip off encosing text or HTML. According to RFC headers MUST be
             # always preverved, so we rely on them
             response = response.text
-            key = response.split(self._begin_header)[1].split(self._end_header)[0]
+            key = response.split(self._begin_header)[
+                1].split(self._end_header)[0]
             key = '{}{}{}'.format(self._begin_header, key, self._end_header)
             if blob:
-                # cannot use requests.content because of html provided by keyserver.
+                # cannot use requests.content because of potential html
+                # provided by keyserver.
                 return key.encode("utf-8")
             else:
                 return key
