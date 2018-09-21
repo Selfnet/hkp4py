@@ -1,6 +1,9 @@
 """
 Utils used by hkp module.
 """
+import subprocess
+import sys
+import os
 
 __all__ = ['cached_property']
 
@@ -58,3 +61,43 @@ class cached_property(object):
             value = self.func(obj)
             obj.__dict__[self.__name__] = value
         return value
+
+
+class ca(object):
+
+    def __init__(self, domain='sks-keyservers.net', pem_url="https://sks-keyservers.net/sks-keyservers.netCA.pem", pem_filename='sks-keyservers.netCA.pem'):
+        self.domain = domain
+        self.pem_url = pem_url
+        self.pem_filename = pem_filename
+
+    @cached_property
+    def pem(self):
+        if sys.platform == "win32":
+            gpgconfcmd = ["gpgconf.exe", "--list-dirs", "datadir"]
+        else:
+            gpgconfcmd = ["/usr/bin/env", "gpgconf", "--list-dirs", "datadir"]
+
+        try:
+            output = subprocess.check_output(gpgconfcmd)
+            if sys.version_info[0] == 2:
+                datadir = output.strip()
+            else:
+                datadir = output.decode(sys.stdout.encoding).strip()
+        except subprocess.CalledProcessError:
+            datadir = ""
+            pass
+
+        pempath = "{0}{1}{2}".format(datadir, os.sep, self.pem_filename)
+
+        if os.path.exists(pempath) is True:
+            pemfile = pempath
+        else:
+            pemfile = self.pem_url
+
+        return pemfile
+
+    def __repr__(self):
+        return 'CA {0}, PEM {1}'.format(self.domain, self.pem)
+
+    def __str__(self):
+        return repr(self)
