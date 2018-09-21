@@ -38,6 +38,14 @@ from hkp4py import KeyServer
 server = KeyServer("hkps://pgp.ext.selfnet.de")
 ```
 
+#### HKPS support via following pool.
+
+The hkps pool is also supported.
+
+```url
+hkps://hkps.pool.sks-keyservers.net
+```
+
 ### Add
 
 Add keys to a keyserver.

@@ -12,7 +12,7 @@ try:
     import urllib.parse as parse
 except ImportError:
     import urlparse as parse
-from .utils import cached_property
+import hkp4py.utils as utils
 
 
 __all__ = ['Key', 'Identity', 'KeyServer']
@@ -42,7 +42,7 @@ class Key(object):
     _end_header = '-----END PGP PUBLIC KEY BLOCK-----'
 
     def __init__(self, host, port, keyid, algo, keylen,
-                 creation_date, expiration_date, flags, proxies=None, headers=None):
+                 creation_date, expiration_date, flags, proxies=None, headers=None, verify=None):
         """
         Takes keyserver host and port used to look up ASCII armored key, and
         data as it is present in search query result.
@@ -56,6 +56,7 @@ class Key(object):
         self.creation_date = datetime.fromtimestamp(int(creation_date))
         self.proxies = proxies
         self.headers = headers
+        self.verify = verify
 
         if expiration_date:
             self.expiration_date = datetime.fromtimestamp(int(expiration_date))
@@ -78,11 +79,11 @@ class Key(object):
     def __str__(self):
         return repr(self)
 
-    @cached_property
+    @utils.cached_property
     def key(self):
         return self.retrieve()
 
-    @cached_property
+    @utils.cached_property
     def key_blob(self):
         return self.retrieve(blob=True)
 
@@ -102,7 +103,7 @@ class Key(object):
         }
         request_url = '{}:{}/pks/lookup'.format(self.host, self.port)
         response = requests.get(
-            request_url, params=params, proxies=self.proxies, headers=self.headers)
+            request_url, params=params, proxies=self.proxies, headers=self.headers, verify=self.verify)
         if response.ok:
             # strip off enclosing text or HTML. According to RFC headers MUST be
             # always preserved, so we rely on them
@@ -160,7 +161,7 @@ class KeyServer(object):
     Keyserver object used for search queries.
     """
 
-    def __init__(self, host, port=11371, proxies=None, headers=None):
+    def __init__(self, host, port=11371, proxies=None, headers=None, verify=True, ca=None):
         if host.startswith('hkp://') or host.startswith('hkps://'):
             host = host.replace("hkp", "http", 1)
             if host.startswith('https'):
@@ -173,6 +174,8 @@ class KeyServer(object):
         self.port = port
         self.proxies = proxies
         self.headers = headers
+        self.verify = verify
+        self.ca = ca or utils.ca()
 
     def __parse_index(self, response):
         """
@@ -185,7 +188,7 @@ class KeyServer(object):
             items = line.split(':')
             if 'pub' in items[0]:
                 key = Key(self.host, self.port, *
-                          items[1:], proxies=self.proxies, headers=self.headers)
+                          items[1:], proxies=self.proxies, headers=self.headers, verify=self.verify)
                 result.append(key)
             if 'uid' in items[0] and key:
                 key.identities.append(Identity(*items[1:]))
@@ -207,8 +210,25 @@ class KeyServer(object):
         }
 
         request_url = '{}:{}/pks/lookup'.format(self.host, self.port)
-        response = requests.get(
-            request_url, params=params, proxies=self.proxies, headers=self.headers)
+        try:
+            response = requests.get(
+                request_url,
+                params=params,
+                proxies=self.proxies,
+                headers=self.headers,
+                verify=self.verify
+            )
+        except:
+            if self.verify == self.ca.pem:
+                raise
+            self.verify = self.ca.pem
+            response = requests.get(
+                request_url,
+                params=params,
+                proxies=self.proxies,
+                headers=self.headers,
+                verify=self.verify
+            )
         if response.ok:
             response = response.text
         else:
@@ -221,7 +241,24 @@ class KeyServer(object):
         """
         request_url = '{}:{}/pks/add'.format(self.host, self.port)
         data = {'keytext': key}
-        response = requests.post(
-            request_url, data=data, proxies=self.proxies, headers=self.headers)
-
+        try:
+            response = requests.post(
+                request_url,
+                data=data,
+                proxies=self.proxies,
+                headers=self.headers,
+                verify=self.verify
+            )
+        except:
+            # check if the ca was already set
+            if self.verify == self.ca.pem:
+                raise
+            self.verify = self.ca.pem
+            response = requests.post(
+                request_url,
+                data=data,
+                proxies=self.proxies,
+                headers=self.headers,
+                verify=self.verify
+            )
         response.raise_for_status()
