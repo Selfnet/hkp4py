@@ -65,7 +65,12 @@ class cached_property(object):
 
 class ca(object):
 
-    def __init__(self, domain='sks-keyservers.net', pem_url="https://sks-keyservers.net/sks-keyservers.netCA.pem", pem_filename='sks-keyservers.netCA.pem'):
+    def __init__(
+        self,
+        domain='sks-keyservers.net',
+        pem_url="https://sks-keyservers.net/sks-keyservers.netCA.pem",
+        pem_filename='sks-keyservers.netCA.pem'
+    ):
         self.domain = domain
         self.pem_url = pem_url
         self.pem_filename = pem_filename
