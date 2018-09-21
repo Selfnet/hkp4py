@@ -89,7 +89,7 @@ class ca(object):
 
         pempath = "{0}{1}{2}".format(datadir, os.sep, self.pem_filename)
 
-        if os.path.exists(pempath) is True:
+        if os.path.exists(pempath):
             pemfile = pempath
         else:
             pemfile = self.pem_url
