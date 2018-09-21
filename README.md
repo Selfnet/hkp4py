@@ -72,6 +72,7 @@ for key in keys:
     print("Date Created:\t{}".format(key.creation_date))
     print("Date Expired:\t{}".format(key.expiration_date))
     print(key.key)
+    print(key.key_blob)
 ```
 
 #### Identity Object
@@ -105,5 +106,5 @@ from __future__ import absolute_import, unicode_literals
 
 import gpg
 
-result = gpg.Context().key_import(key.key.encode("utf-8"))
+result = gpg.Context().key_import(key.key_blob)
 ```

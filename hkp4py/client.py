@@ -79,7 +79,14 @@ class Key(object):
         return repr(self)
 
     @cached_property
-    def key(self, nm=False):
+    def key(self):
+        return self.retrieve()
+
+    @cached_property
+    def key_blob(self):
+        return self.retrieve(blob=True)
+
+    def retrieve(self, nm=False, blob=False):
         """
         Retrieve public key from keyserver and strip off any enclosing HTML.
         """
@@ -95,15 +102,22 @@ class Key(object):
         }
         request_url = '{}:{}/pks/lookup'.format(self.host, self.port)
         response = requests.get(
-            request_url, params=params, proxies=self.proxies, headers = self.headers)
+            request_url, params=params, proxies=self.proxies, headers=self.headers)
         if response.ok:
+            # strip off enclosing text or HTML. According to RFC headers MUST be
+            # always preserved, so we rely on them
             response = response.text
+            key = response.split(self._begin_header)[
+                1].split(self._end_header)[0]
+            key = '{}{}{}'.format(self._begin_header, key, self._end_header)
+            if blob:
+                # cannot use requests.content because of potential html
+                # provided by keyserver. (see above comment)
+                return key.encode("utf-8")
+            else:
+                return key
         else:
             return None
-        # strip off encosing text or HTML. According to RFC headers MUST be
-        # always preverved, so we rely on them
-        key = response.split(self._begin_header)[1].split(self._end_header)[0]
-        return '{}{}{}'.format(self._begin_header, key, self._end_header)
 
 
 class Identity(object):
