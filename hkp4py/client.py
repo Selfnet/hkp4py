@@ -223,4 +223,5 @@ class KeyServer(object):
         data = {'keytext': key}
         response = requests.post(
             request_url, data=data, proxies=self.proxies, headers=self.headers)
+
         response.raise_for_status()
