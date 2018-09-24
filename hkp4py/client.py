@@ -112,7 +112,7 @@ class Key(object):
             if blob:
                 # cannot use requests.content because of potential html
                 # provided by keyserver. (see above comment)
-                return key.encode("utf-8")
+                return bytes(key.encode("utf-8"))
             else:
                 return key
         else:
