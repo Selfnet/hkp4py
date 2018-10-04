@@ -32,6 +32,9 @@ This object represents a keyserver using the hkp protocol.
 Initialize the KeyServer object.
 
 ```python
+# python2and3 compliance
+from __future__ import absolute_import, unicode_literals, print_function
+
 from hkp4py import KeyServer
 
 

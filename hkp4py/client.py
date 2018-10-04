@@ -42,7 +42,7 @@ class Key(object):
     _end_header = '-----END PGP PUBLIC KEY BLOCK-----'
 
     def __init__(self, host, port, keyid, algo, keylen,
-                 creation_date, expiration_date, flags, proxies=None, headers=None, verify=None):
+                 creation_date, expiration_date, flags, session=None):
         """
         Takes keyserver host and port used to look up ASCII armored key, and
         data as it is present in search query result.
@@ -54,9 +54,7 @@ class Key(object):
         self.algo = ALGORITHMS.get(algo, algo)
         self.key_length = int(keylen)
         self.creation_date = datetime.fromtimestamp(int(creation_date))
-        self.proxies = proxies
-        self.headers = headers
-        self.verify = verify
+        self.session = session
 
         if expiration_date:
             self.expiration_date = datetime.fromtimestamp(int(expiration_date))
@@ -102,8 +100,8 @@ class Key(object):
             'options': ','.join(name for name, val in opts if val),
         }
         request_url = '{}:{}/pks/lookup'.format(self.host, self.port)
-        response = requests.get(
-            request_url, params=params, proxies=self.proxies, headers=self.headers, verify=self.verify)
+        response = self.session.get(
+            request_url, params=params)
         if response.ok:
             # strip off enclosing text or HTML. According to RFC headers MUST be
             # always preserved, so we rely on them
@@ -114,7 +112,7 @@ class Key(object):
             if blob:
                 # cannot use requests.content because of potential html
                 # provided by keyserver. (see above comment)
-                return key.encode("utf-8")
+                return bytes(key.encode("utf-8"))
             else:
                 return key
         else:
@@ -161,7 +159,7 @@ class KeyServer(object):
     Keyserver object used for search queries.
     """
 
-    def __init__(self, host, port=11371, proxies=None, headers=None, verify=True, ca=None):
+    def __init__(self, host, port=11371, proxies=None, headers=None, verify=True):
         if host.startswith('hkp://') or host.startswith('hkps://'):
             host = host.replace("hkp", "http", 1)
             if host.startswith('https'):
@@ -169,13 +167,15 @@ class KeyServer(object):
                     port = 443
         else:
             raise Exception("Unsupported protocol, hkp|hkps are supported.")
-
         self.host = host
         self.port = port
-        self.proxies = proxies
-        self.headers = headers
-        self.verify = verify
-        self.ca = ca or utils.ca()
+        # Buildup Session
+        self.session = requests.session()
+        self.session.headers = headers
+        self.session.proxies = proxies
+        if host.endswith("hkps.pool.sks-keyservers.net"):
+            verify = utils.ca().pem
+        self.session.verify = verify
 
     def __parse_index(self, response):
         """
@@ -188,7 +188,7 @@ class KeyServer(object):
             items = line.split(':')
             if 'pub' in items[0]:
                 key = Key(self.host, self.port, *
-                          items[1:], proxies=self.proxies, headers=self.headers, verify=self.verify)
+                          items[1:], session=self.session)
                 result.append(key)
             if 'uid' in items[0] and key:
                 key.identities.append(Identity(*items[1:]))
@@ -210,25 +210,9 @@ class KeyServer(object):
         }
 
         request_url = '{}:{}/pks/lookup'.format(self.host, self.port)
-        try:
-            response = requests.get(
-                request_url,
-                params=params,
-                proxies=self.proxies,
-                headers=self.headers,
-                verify=self.verify
-            )
-        except:
-            if self.verify == self.ca.pem:
-                raise
-            self.verify = self.ca.pem
-            response = requests.get(
-                request_url,
-                params=params,
-                proxies=self.proxies,
-                headers=self.headers,
-                verify=self.verify
-            )
+        response = self.session.get(
+            request_url,
+            params=params)
         if response.ok:
             response = response.text
         else:
@@ -241,24 +225,7 @@ class KeyServer(object):
         """
         request_url = '{}:{}/pks/add'.format(self.host, self.port)
         data = {'keytext': key}
-        try:
-            response = requests.post(
-                request_url,
-                data=data,
-                proxies=self.proxies,
-                headers=self.headers,
-                verify=self.verify
-            )
-        except:
-            # check if the ca was already set
-            if self.verify == self.ca.pem:
-                raise
-            self.verify = self.ca.pem
-            response = requests.post(
-                request_url,
-                data=data,
-                proxies=self.proxies,
-                headers=self.headers,
-                verify=self.verify
-            )
+        response = self.session.post(
+            request_url,
+            data=data)
         response.raise_for_status()

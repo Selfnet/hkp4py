@@ -19,7 +19,7 @@ HERE = path.abspath(path.dirname(__file__))
 with io.open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
-__version__ = "0.2.2.0"
+__version__ = "0.2.3.0"
 
 setup(
     name='hkp4py',
@@ -68,7 +68,8 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=['bin', 'lib', 'contrib', 'docs', 'tests', 'dist', 'env', 'env2']),
+    packages=find_packages(
+        exclude=['bin', 'lib', 'contrib', 'docs', 'tests', 'dist', 'env', 'env2']),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
