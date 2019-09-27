@@ -6,12 +6,12 @@ See:
     https://github.com/pypa/sampleproject
 """
 
-# To use a consistent encoding
-import os
-from os import path
 import io
+# To use a consistent encoding
+from os import path
+
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 HERE = path.abspath(path.dirname(__file__))
 

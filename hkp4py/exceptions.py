@@ -1,0 +1,3 @@
+
+class MalformedURL(Exception):
+    pass

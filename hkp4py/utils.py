@@ -1,9 +1,9 @@
 """
 Utils used by hkp module.
 """
+import os
 import subprocess
 import sys
-import os
 
 __all__ = ['cached_property']
 
@@ -63,7 +63,7 @@ class cached_property(object):
         return value
 
 
-class ca(object):
+class CA(object):
 
     def __init__(
         self,
