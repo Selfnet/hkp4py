@@ -1,7 +1,5 @@
 from typing import Union
-
 import requests
-
 from .exceptions import MalformedURL, UnsupportedProtocol
 from .protocols import HKPKey, Identity, Protocol, VKSKey
 from .protocols.key import IKey
