@@ -4,7 +4,6 @@ try:
 except ImportError:
     import urlparse as parse
 from .key import IKey
-from ..utils import cached_property
 
 
 class Identity(object):
@@ -63,8 +62,8 @@ class HKPKey(IKey):
     Public key object for HKP Servers.
     """
 
-    def __init__(self, url: str, keyid: str, algo, keylen,
-                 creation_date, expiration_date, flags, session=None):
+    def __init__(self, url: str, keyid: str, algo, keylen: str,
+                 creation_date: str, expiration_date: str, flags, session=None):
         """
         Takes keyserver host and port used to look up ASCII armored key, and
         data as it is present in search query result.
