@@ -2,8 +2,8 @@ from typing import Union
 
 import requests
 
-from .exceptions import MalformedURL
-from .protocols import HKPKey, Identity, Protocol, UnsupportedProtocol, VKSKey
+from .exceptions import MalformedURL, UnsupportedProtocol
+from .protocols import HKPKey, Identity, Protocol, VKSKey
 from .protocols.key import IKey
 from .utils import CA
 
@@ -18,7 +18,13 @@ except:
 class Client(object):
     supported_protocols = tuple([protocol.value for protocol in Protocol])
 
-    def __init__(self, host: str, proxies: dict = {}, headers: dict = {}, verify: bool = True):
+    def __init__(
+        self,
+        host: str,
+        proxies: dict = {},
+        headers: dict = {},
+        verify: bool = True
+    ):
         if not host.startswith(self.supported_protocols):
             raise UnsupportedProtocol
         self.protocol = self.get_protocol(host)
@@ -46,8 +52,13 @@ class Client(object):
     def get_url(self, host: str):
         if self.protocol is Protocol.HKP:
             return host.replace(self.protocol.value, 'http', 1)
-        elif self.protocol is Protocol.HKPS or self.protocol is Protocol.VKS:
+        elif (
+            self.protocol is Protocol.HKPS or
+            self.protocol is Protocol.VKS or
+            self.protocol is Protocol.WKS
+        ):
             return host.replace(self.protocol.value, 'https', 1)
+        raise UnsupportedProtocol
 
 
 class VKSCLient(Client):
@@ -74,16 +85,16 @@ class VKSCLient(Client):
 
     def get_by_keyid(self, keyid: str):
         VKSCLient.no_legaxy_0x(keyid)
-        url = urljoin(self.url, '{0}/by-keyid/{1}'.format(self.v1, keyid))
+        url = urljoin(
+            self.url, '{0}/by-keyid/{1}'.format(self.v1, quote(keyid)))
         return VKSKey(url, self.session, keyid=keyid)
 
     def get_by_email(self, email: str):
         url = urljoin(
             self.url, '{0}/by-email/{1}'.format(self.v1, quote(email)))
-        print(url)
         return VKSKey(url, self.session, uid=email)
 
-    def upload(self, key: Union[HKPKey, str]):
+    def upload(self, key: Union[VKSKey, str, bytes]):
         pass
 
 
@@ -140,7 +151,7 @@ class HKPClient(Client):
             return None
         return self.__parse_index(response)
 
-    def add(self, key):
+    def add(self, key: Union[HKPKey, str, bytes]):
         """
         Upload key to the keyserver.
         """

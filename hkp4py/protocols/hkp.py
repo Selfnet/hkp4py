@@ -62,8 +62,17 @@ class HKPKey(IKey):
     Public key object for HKP Servers.
     """
 
-    def __init__(self, url: str, keyid: str, algo, keylen: str,
-                 creation_date: str, expiration_date: str, flags, session=None):
+    def __init__(
+        self,
+        url: str,
+        keyid: str,
+        algo,
+        keylen: str,
+        creation_date: str,
+        expiration_date: str,
+        flags,
+        session=None
+    ):
         """
         Takes keyserver host and port used to look up ASCII armored key, and
         data as it is present in search query result.
@@ -117,9 +126,12 @@ class HKPKey(IKey):
             # strip off enclosing text or HTML. According to RFC headers MUST be
             # always preserved, so we rely on them
             response = response.text
-            key = response.split(self._begin_header)[
-                1].split(self._end_header)[0]
-            key = '{}{}{}'.format(self._begin_header, key, self._end_header)
+            key = response.split(
+                self._begin_header
+            )[1].split(
+                self._end_header
+            )[0]
+            key = '{0}{1}{2}'.format(self._begin_header, key, self._end_header)
             if blob:
                 # cannot use requests.content because of potential html
                 # provided by keyserver. (see above comment)

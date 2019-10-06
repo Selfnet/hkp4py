@@ -8,11 +8,7 @@ class Protocol(Enum):
     HKP = 'hkp'
     HKPS = 'hkps'
     VKS = 'vks'
+    WKS = 'wks'
 
 
-class UnsupportedProtocol(Exception):
-    msg = "Suported are: {}".format(
-        "://, ".join([protocol.value for protocol in Protocol]))
-
-
-__all__ = ["VKSKey", "HKPKey", "Identity", "Protocol", "UnsupportedProtocol"]
+__all__ = ["VKSKey", "HKPKey", "Identity", "Protocol"]
