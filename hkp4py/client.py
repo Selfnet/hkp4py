@@ -203,9 +203,9 @@ class KeyServer(object):
         )
 
         params = {
-            'search': query,
             'op': 'index',
             'options': ','.join(name for name, val in opts if val),
+            'search': query,
             'exact': exact and 'on' or 'off',
         }
 
