@@ -19,7 +19,7 @@ HERE = path.abspath(path.dirname(__file__))
 with io.open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
-__version__ = "0.2.3.0"
+__version__ = "0.2.3.1"
 
 setup(
     name='hkp4py',
