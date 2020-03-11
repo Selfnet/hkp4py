@@ -133,9 +133,9 @@ class HKPClient(Client):
         )
 
         params = {
-            'search': query,
             'op': 'index',
             'options': ','.join(name for name, val in opts if val),
+            'search': query,
             'exact': exact and 'on' or 'off',
         }
 
@@ -145,8 +145,11 @@ class HKPClient(Client):
             params=params)
         if response.ok:
             response = response.text
-        else:
+        elif response.status_code == requests.codes.not_found:
             return None
+        else:
+            raise Exception(
+                '{}\nRequest URL: {}\nResponse:\n{}'.format(response.status_code, response.request.url, response.text))
         return self.__parse_index(response)
 
     def add(self, key: Union[HKPKey, str, bytes]):

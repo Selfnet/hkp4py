@@ -31,7 +31,7 @@ setup(
 
     description='A Library to get Keys from a keyserver specified',
     long_description=LONG_DESCRIPTION,
-
+    long_description_content_type='text/markdown',
     # The project's main homepage.
     url='https://github.com/Selfnet/hkp4py',
 
