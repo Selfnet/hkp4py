@@ -23,6 +23,9 @@ class IKey(object):
     def retrieve(self, blob: bool = False) -> Union[str, bytes]:
         raise NotImplementedError
 
+    def __str__(self) -> str:
+        return repr(self)
+
     @cached_property
     def key_blob(self) -> bytes:
         return self.retrieve(blob=True)

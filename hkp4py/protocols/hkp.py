@@ -113,9 +113,6 @@ class HKPKey(IKey):
     def __repr__(self) -> str:
         return 'Key {} {}'.format(self.keyid, self.algo)
 
-    def __str__(self) -> str:
-        return repr(self)
-
     def retrieve(
         self,
         nm: bool = False,

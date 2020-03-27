@@ -31,9 +31,6 @@ class VKSKey(IKey):
     def __repr__(self) -> str:
         return 'Key {}'.format(self.keyid or self.fingerprint or self.uid)
 
-    def __str__(self) -> str:
-        return repr(self)
-
     def retrieve(self, blob: bool = False) -> Union[str, bytes]:
         """
         Retrieve public key from keyserver and ensure the right content-type
