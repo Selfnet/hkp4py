@@ -1,10 +1,9 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 
 import requests
 
 from .exceptions import MalformedURL, UnsupportedProtocol
 from .protocols import HKPKey, Identity, Protocol, VKSKey
-from .protocols.key import IKey
 from .utils import CA
 
 try:
@@ -67,13 +66,13 @@ class Client(object):
         )
 
 
-class VKSCLient(Client):
+class VKSClient(Client):
     """
         VKS Client for Hagrid --> https://keys.openpgp.org/about/api
     """
     v1 = '/vks/v1'
 
-    def __init__(self, host, **kwargs):
+    def __init__(self, host, **kwargs) -> 'VKSClient':
         super().__init__(host, **kwargs)
 
     @staticmethod
@@ -81,21 +80,21 @@ class VKSCLient(Client):
         if id.startswith("0x"):
             raise LookupError
 
-    def get_by_fingerprint(self, fingerprint: str) -> IKey:
-        VKSCLient.no_legaxy_0x(fingerprint)
+    def get_by_fingerprint(self, fingerprint: str) -> Union[VKSKey, None]:
+        VKSClient.no_legaxy_0x(fingerprint)
         url = self.get_url(
             '{0}/by-fingerprint/{1}'.format(self.v1, fingerprint)
         )
         return VKSKey(url, self.session, fingerprint=fingerprint)
 
-    def get_by_keyid(self, keyid: str):
-        VKSCLient.no_legaxy_0x(keyid)
+    def get_by_keyid(self, keyid: str) -> Union[VKSKey, None]:
+        VKSClient.no_legaxy_0x(keyid)
         url = self.get_url(
             '{0}/by-keyid/{1}'.format(self.v1, quote(keyid))
         )
         return VKSKey(url, self.session, keyid=keyid)
 
-    def get_by_email(self, email: str):
+    def get_by_email(self, email: str) -> Union[VKSKey, None]:
         url = self.get_url(
             '{0}/by-email/{1}'.format(self.v1, quote(email))
         )
@@ -115,7 +114,7 @@ class HKPClient(Client):
             kwargs['verify'] = CA().pem
         super().__init__(host, **kwargs)
 
-    def __parse_index(self, response):
+    def __parse_index(self, response) -> List[Union[HKPKey, None]]:
         """
         Parse machine readable index response.
         """
@@ -131,7 +130,12 @@ class HKPClient(Client):
                 key.identities.append(Identity(*items[1:]))
         return result
 
-    def search(self, query: str, exact: bool = False, nm: bool = False):
+    def search(
+        self,
+        query: str,
+        exact: bool = False,
+        nm: bool = False
+    ) -> List[Union[HKPKey, None]]:
         """
         Searches for given query, returns list of key objects.
         """

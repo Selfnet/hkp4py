@@ -70,7 +70,7 @@ class CA(object):
         domain='sks-keyservers.net',
         pem_url="https://sks-keyservers.net/sks-keyservers.netCA.pem",
         pem_filename='sks-keyservers.netCA.pem'
-    ):
+    ) -> 'CA':
         self.domain = domain
         self.pem_url = pem_url
         self.pem_filename = pem_filename
@@ -100,8 +100,8 @@ class CA(object):
 
         return pemfile
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'CA {0}, PEM {1}'.format(self.domain, self.pem)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self)

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Union, Dict
 
 from requests import Session, codes
 
@@ -10,13 +11,19 @@ except ImportError:
     import urlparse as parse
 
 
-class Identity(object):
+class Identity():
     """
     Key owner's identity. Constructor takes data as it is present in search
     query result.
     """
 
-    def __init__(self, uid, creation_date, expiration_date, flags):
+    def __init__(
+        self,
+        uid,
+        creation_date,
+        expiration_date,
+        flags
+    ) -> 'Identity':
         self.uid = parse.unquote(uid)
 
         if creation_date:
@@ -38,15 +45,15 @@ class Identity(object):
         if 'e' in flags:
             self.expired = True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Identity {}'.format(self.uid)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self)
 
 
 # Loosely taken from RFC2440 (http://tools.ietf.org/html/rfc2440#section-9.1)
-ALGORITHMS = {
+ALGORITHMS: Dict[int, str] = {
     0: 'unknown',
     1: 'RSA (Encrypt or Sign)',
     2: 'RSA Encrypt-Only',
@@ -76,7 +83,7 @@ class HKPKey(IKey):
         expiration_date: str,
         flags,
         session: Session = None
-    ):
+    ) -> 'HKPKey':
         """
         Takes keyserver host and port used to look up ASCII armored key, and
         data as it is present in search query result.
@@ -101,15 +108,19 @@ class HKPKey(IKey):
             self.expired = True
         self.identities = []
 
-        super(HKPKey, self).__init__(url, session)
+        super().__init__(url, session)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Key {} {}'.format(self.keyid, self.algo)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self)
 
-    def retrieve(self, nm: bool = False, blob: bool = False):
+    def retrieve(
+        self,
+        nm: bool = False,
+        blob: bool = False
+    ) -> Union[str, bytes]:
         """
         Retrieve public key from keyserver and strip off any enclosing HTML.
         """

@@ -1,3 +1,5 @@
+from typing import Union
+
 from requests import Session, codes
 
 from ..exceptions import NoKeyResponse
@@ -26,13 +28,13 @@ class VKSKey(IKey):
         self.uid: str = uid
         super().__init__(url, session)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Key {}'.format(self.keyid or self.fingerprint or self.uid)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self)
 
-    def retrieve(self, blob: bool = False):
+    def retrieve(self, blob: bool = False) -> Union[str, bytes]:
         """
         Retrieve public key from keyserver and ensure the right content-type
         """
