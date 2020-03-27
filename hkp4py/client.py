@@ -1,5 +1,7 @@
-from typing import Union
+from typing import Tuple, Union
+
 import requests
+
 from .exceptions import MalformedURL, UnsupportedProtocol
 from .protocols import HKPKey, Identity, Protocol, VKSKey
 from .protocols.key import IKey
@@ -8,7 +10,7 @@ from .utils import CA
 try:
     # python2
     from urlparse import urlparse, urljoin, quote
-except:
+except ImportError:
     # python3
     from urllib.parse import urlparse, urljoin, quote
 
@@ -22,32 +24,32 @@ class Client(object):
         proxies: dict = {},
         headers: dict = {},
         verify: bool = True
-    ):
+    ) -> 'Client':
         if not host.startswith(self.supported_protocols):
             raise UnsupportedProtocol
-        self.protocol = self.get_protocol(host)
-        self.url = self.get_url(host)
+        self.protocol = Client._get_protocol(host)
+        self.url = self._get_url(host)
         self.session = requests.session()
         self.session.headers = headers
         self.session.proxies = proxies
         self.session.verify = verify
 
     @staticmethod
-    def uri_validator(uri: str) -> tuple:
-
+    def uri_validator(uri: str) -> Tuple[str, bool]:
         try:
             result = urlparse(uri)
             return result.scheme, all([result.scheme, result.netloc])
-        except:
+        except ValueError:
             return "", False
 
-    def get_protocol(self, host: str):
+    @staticmethod
+    def _get_protocol(host: str) -> Protocol:
         protocol, is_valid = Client.uri_validator(host)
         if is_valid:
             return Protocol(protocol)
         raise MalformedURL
 
-    def get_url(self, host: str):
+    def _get_url(self, host: str) -> str:
         if self.protocol is Protocol.HKP:
             return host.replace(self.protocol.value, 'http', 1)
         elif (
@@ -58,6 +60,12 @@ class Client(object):
             return host.replace(self.protocol.value, 'https', 1)
         raise UnsupportedProtocol
 
+    def get_url(self, path: str) -> str:
+        return urljoin(
+            self.url,
+            path
+        )
+
 
 class VKSCLient(Client):
     """
@@ -66,9 +74,7 @@ class VKSCLient(Client):
     v1 = '/vks/v1'
 
     def __init__(self, host, **kwargs):
-        if not host.startswith("vks"):
-            raise UnsupportedProtocol
-        super(VKSCLient, self).__init__(host, **kwargs)
+        super().__init__(host, **kwargs)
 
     @staticmethod
     def no_legaxy_0x(id: str):
@@ -77,19 +83,22 @@ class VKSCLient(Client):
 
     def get_by_fingerprint(self, fingerprint: str) -> IKey:
         VKSCLient.no_legaxy_0x(fingerprint)
-        url = urljoin(
-            self.url, '{0}/by-fingerprint/{1}'.format(self.v1, fingerprint))
+        url = self.get_url(
+            '{0}/by-fingerprint/{1}'.format(self.v1, fingerprint)
+        )
         return VKSKey(url, self.session, fingerprint=fingerprint)
 
     def get_by_keyid(self, keyid: str):
         VKSCLient.no_legaxy_0x(keyid)
-        url = urljoin(
-            self.url, '{0}/by-keyid/{1}'.format(self.v1, quote(keyid)))
+        url = self.get_url(
+            '{0}/by-keyid/{1}'.format(self.v1, quote(keyid))
+        )
         return VKSKey(url, self.session, keyid=keyid)
 
     def get_by_email(self, email: str):
-        url = urljoin(
-            self.url, '{0}/by-email/{1}'.format(self.v1, quote(email)))
+        url = self.get_url(
+            '{0}/by-email/{1}'.format(self.v1, quote(email))
+        )
         return VKSKey(url, self.session, uid=email)
 
     def upload(self, key: Union[VKSKey, str, bytes]):
@@ -102,11 +111,9 @@ class HKPClient(Client):
     """
 
     def __init__(self, host: str, verify: bool = True, **kwargs):
-        if not host.startswith("hkp"):
-            raise UnsupportedProtocol
         if host.endswith("hkps.pool.sks-keyservers.net"):
             kwargs['verify'] = CA().pem
-        super(HKPClient, self).__init__(host, **kwargs)
+        super().__init__(host, **kwargs)
 
     def __parse_index(self, response):
         """
@@ -139,26 +146,25 @@ class HKPClient(Client):
             'exact': exact and 'on' or 'off',
         }
 
-        request_url = '{}/pks/lookup'.format(self.url)
+        url = self.get_url('/pks/lookup')
         response = self.session.get(
-            request_url,
+            url,
             params=params)
         if response.ok:
             response = response.text
         elif response.status_code == requests.codes.not_found:
             return None
         else:
-            raise Exception(
-                '{}\nRequest URL: {}\nResponse:\n{}'.format(response.status_code, response.request.url, response.text))
+            response.raise_for_status()
         return self.__parse_index(response)
 
     def add(self, key: Union[HKPKey, str, bytes]):
         """
         Upload key to the keyserver.
         """
-        request_url = '{}/pks/add'.format(self.url)
+        url = self.get_url('/pks/add')
         data = {'keytext': key}
         response = self.session.post(
-            request_url,
+            url,
             data=data)
         response.raise_for_status()

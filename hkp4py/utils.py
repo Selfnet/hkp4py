@@ -81,7 +81,6 @@ class CA(object):
             gpgconfcmd = ["gpgconf.exe", "--list-dirs", "datadir"]
         else:
             gpgconfcmd = ["/usr/bin/env", "gpgconf", "--list-dirs", "datadir"]
-
         try:
             output = subprocess.check_output(gpgconfcmd)
             if sys.version_info[0] == 2:

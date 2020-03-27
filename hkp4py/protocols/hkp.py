@@ -1,9 +1,13 @@
 from datetime import datetime
+
+from requests import Session, codes
+
+from .key import IKey
+
 try:
     import urllib.parse as parse
 except ImportError:
     import urlparse as parse
-from .key import IKey
 
 
 class Identity(object):
@@ -71,7 +75,7 @@ class HKPKey(IKey):
         creation_date: str,
         expiration_date: str,
         flags,
-        session=None
+        session: Session = None
     ):
         """
         Takes keyserver host and port used to look up ASCII armored key, and
@@ -123,7 +127,8 @@ class HKPKey(IKey):
         response = self.session.get(
             request_url, params=params)
         if response.ok:
-            # strip off enclosing text or HTML. According to RFC headers MUST be
+            # strip off enclosing text or HTML.
+            # According to RFC headers MUST be
             # always preserved, so we rely on them
             response = response.text
             key = response.split(
@@ -138,5 +143,7 @@ class HKPKey(IKey):
                 return bytes(key.encode("utf-8"))
             else:
                 return key
-        else:
+        elif response.status_code == codes.not_found:
             return None
+        else:
+            return response.raise_for_status()

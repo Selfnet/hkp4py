@@ -19,7 +19,7 @@ HERE = path.abspath(path.dirname(__file__))
 with io.open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
-__version__ = "0.3.0.1"
+__version__ = "0.3.0"
 
 setup(
     name='hkp4py',
@@ -59,18 +59,29 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.5'
     ],
 
     # What does your project relate to?
-    keywords='crypting keys gpg hkp hkps gnupg pgp keyserver',
+    keywords='crypting keys gpg vks hkp hkps gnupg pgp keyserver',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
     packages=find_packages(
-        exclude=['bin', 'lib', 'contrib', 'docs', 'tests', 'dist', 'env', 'env2']),
+        exclude=[
+            'bin',
+            'lib',
+            'contrib',
+            'docs',
+            'tests',
+            'dist',
+            'env',
+            'env2'
+        ]
+    ),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
