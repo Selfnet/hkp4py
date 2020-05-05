@@ -2,7 +2,7 @@ from typing import Union
 
 from requests import Session, codes
 
-import hkp4py.exceptions as exceptions
+from .. import exceptions
 
 from .key import IKey
 
