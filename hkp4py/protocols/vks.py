@@ -1,5 +1,10 @@
+from typing import Union
+
+from requests import Session, codes
+
+import hkp4py.exceptions as exceptions
+
 from .key import IKey
-from requests import Session
 
 
 class VKSKey(IKey):
@@ -22,19 +27,18 @@ class VKSKey(IKey):
         self.keyid: str = keyid
         self.fingerprint: str = fingerprint
         self.uid: str = uid
-        super(VKSKey, self).__init__(url, session)
+        super().__init__(url, session)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Key {}'.format(self.keyid or self.fingerprint or self.uid)
 
-    def __str__(self):
-        return repr(self)
-
-    def retrieve(self, blob: bool = False):
+    def retrieve(self, blob: bool = False) -> Union[str, bytes]:
         """
         Retrieve public key from keyserver and ensure the right content-type
         """
-        self.session.headers.update({'Content-Type': 'application/pgp-keys'})
+        self.session.headers.update(
+            {'Content-Type': 'application/pgp-keys'}
+        )
         response = self.session.get(self.url)
         if response.ok:
             key = response.text.strip()
@@ -42,12 +46,12 @@ class VKSKey(IKey):
                 not key.startswith(self._begin_header) or
                 not key.endswith(self._end_header)
             ):
-                raise Exception("No Key Response.")
+                raise exceptions.NoKeyResponse
             if blob:
-                # cannot use requests.content because of potential html
-                # provided by keyserver. (see above comment)
                 return bytes(key.encode("utf-8"))
             else:
                 return key
-        else:
+        elif response.status_code == codes.not_found:
             return None
+        else:
+            response.raise_for_status()
