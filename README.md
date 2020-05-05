@@ -9,17 +9,22 @@ This library uses the requests module to get the keys.
 
 * 2.7.15
 
+All versions above 0.2.3.0 do not support Python 2.x.x . 
+These old versions only support HKP keyserver or keyservers using the sks keyserver software.
 ### Python 3
 
-* 3.7
+* directly supported
+  * 3.7
+  * 3.6
+  * 3.5
+
+Every
 
 ## Intstall via [AUR](https://aur.archlinux.org/packages/python-hkp4py-git/)
 
 ## Install via [PyPI](https://pypi.org/project/hkp4py/)
 
 ```bash
-pip install hkp4py
-
 pip3 install hkp4py
 ```
 

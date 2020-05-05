@@ -1,6 +1,8 @@
 """
 Python HKP client module
 """
+from .client import HKPClient, HKPClient as KeyServer
+from .client import HKPKey, HKPKey as Key
+from .client import Identity, VKSClient
 
-from hkp4py.client import Key, Identity, KeyServer
-__all__ = ['Key', 'Identity', 'KeyServer']
+__all__ = ["Key", "HKPKey", "Identity", "HKPClient", "VKSClient", "KeyServer"]

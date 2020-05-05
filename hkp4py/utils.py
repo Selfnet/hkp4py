@@ -1,9 +1,9 @@
 """
 Utils used by hkp module.
 """
+import os
 import subprocess
 import sys
-import os
 
 __all__ = ['cached_property']
 
@@ -63,14 +63,14 @@ class cached_property(object):
         return value
 
 
-class ca(object):
+class CA(object):
 
     def __init__(
         self,
         domain='sks-keyservers.net',
         pem_url="https://sks-keyservers.net/sks-keyservers.netCA.pem",
         pem_filename='sks-keyservers.netCA.pem'
-    ):
+    ) -> 'CA':
         self.domain = domain
         self.pem_url = pem_url
         self.pem_filename = pem_filename
@@ -81,7 +81,6 @@ class ca(object):
             gpgconfcmd = ["gpgconf.exe", "--list-dirs", "datadir"]
         else:
             gpgconfcmd = ["/usr/bin/env", "gpgconf", "--list-dirs", "datadir"]
-
         try:
             output = subprocess.check_output(gpgconfcmd)
             if sys.version_info[0] == 2:
@@ -101,8 +100,8 @@ class ca(object):
 
         return pemfile
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'CA {0}, PEM {1}'.format(self.domain, self.pem)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self)

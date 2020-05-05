@@ -1,183 +1,120 @@
-"""
-Python HKP protocol client implementation based on current draft spec
-http://tools.ietf.org/html/draft-shaw-openpgp-hkp-00
+from typing import Tuple, Union, List
 
-Taken from: 
-https://github.com/dgladkov/python-hkp/blob/master/hkp/client.py
-"""
-import sys
-from datetime import datetime
 import requests
+
+from .exceptions import MalformedURL, UnsupportedProtocol
+from .protocols import HKPKey, Identity, Protocol, VKSKey
+from .utils import CA
+
 try:
-    import urllib.parse as parse
+    # python2
+    from urlparse import urlparse, urljoin, quote
 except ImportError:
-    import urlparse as parse
-import hkp4py.utils as utils
+    # python3
+    from urllib.parse import urlparse, urljoin, quote
 
 
-__all__ = ['Key', 'Identity', 'KeyServer']
+class Client(object):
+    supported_protocols = tuple([protocol.value for protocol in Protocol])
 
-# Loosely taken from RFC2440 (http://tools.ietf.org/html/rfc2440#section-9.1)
-ALGORITHMS = {
-    0: 'unknown',
-    1: 'RSA (Encrypt or Sign)',
-    2: 'RSA Encrypt-Only',
-    3: 'RSA Sign-Only',
-    16: 'Elgamal (Encrypt-Only)',
-    17: 'DSA (Digital Signature Standard)',
-    18: 'Elliptic Curve',
-    19: 'ECDSA',
-    20: 'Elgamal (Encrypt or Sign)',
-    21: 'Reserved for Diffie-Hellman',
-    22: 'EdDSA',
-}
-
-
-class Key(object):
-    """
-    Public key object.
-    """
-
-    _begin_header = '-----BEGIN PGP PUBLIC KEY BLOCK-----'
-    _end_header = '-----END PGP PUBLIC KEY BLOCK-----'
-
-    def __init__(self, host, port, keyid, algo, keylen,
-                 creation_date, expiration_date, flags, session=None):
-        """
-        Takes keyserver host and port used to look up ASCII armored key, and
-        data as it is present in search query result.
-        """
-        self.host = host
-        self.port = port
-        self.keyid = keyid
-        algo = int(algo)
-        self.algo = ALGORITHMS.get(algo, algo)
-        self.key_length = int(keylen)
-        self.creation_date = datetime.fromtimestamp(int(creation_date))
-        self.session = session
-
-        if expiration_date:
-            self.expiration_date = datetime.fromtimestamp(int(expiration_date))
-        else:
-            self.expiration_date = None
-
-        self.revoked = self.disabled = self.expired = False
-        if 'r' in flags:
-            self.revoked = True
-        if 'd' in flags:
-            self.disabled = True
-        if 'e' in flags:
-            self.expired = True
-
-        self.identities = []
-
-    def __repr__(self):
-        return 'Key {} {}'.format(self.keyid, self.algo)
-
-    def __str__(self):
-        return repr(self)
-
-    @utils.cached_property
-    def key(self):
-        return self.retrieve()
-
-    @utils.cached_property
-    def key_blob(self):
-        return self.retrieve(blob=True)
-
-    def retrieve(self, nm=False, blob=False):
-        """
-        Retrieve public key from keyserver and strip off any enclosing HTML.
-        """
-        opts = (
-            ('mr', True), ('nm', nm),
-        )
-
-        keyid = self.keyid
-        params = {
-            'search': keyid.startswith('0x') and keyid or '0x{}'.format(keyid),
-            'op': 'get',
-            'options': ','.join(name for name, val in opts if val),
-        }
-        request_url = '{}:{}/pks/lookup'.format(self.host, self.port)
-        response = self.session.get(
-            request_url, params=params)
-        if response.ok:
-            # strip off enclosing text or HTML. According to RFC headers MUST be
-            # always preserved, so we rely on them
-            response = response.text
-            key = response.split(self._begin_header)[
-                1].split(self._end_header)[0]
-            key = '{}{}{}'.format(self._begin_header, key, self._end_header)
-            if blob:
-                # cannot use requests.content because of potential html
-                # provided by keyserver. (see above comment)
-                return bytes(key.encode("utf-8"))
-            else:
-                return key
-        else:
-            return None
-
-
-class Identity(object):
-    """
-    Key owner's identity. Constructor takes data as it is present in search
-    query result.
-    """
-
-    def __init__(self, uid, creation_date, expiration_date, flags):
-        self.uid = parse.unquote(uid)
-
-        if creation_date:
-            self.creation_date = datetime.fromtimestamp(int(creation_date))
-        else:
-            self.creation_date = None
-
-        if expiration_date:
-            self.expiration_date = datetime.fromtimestamp(int(expiration_date))
-        else:
-            self.expiration_date = None
-
-        self.revoked = self.disabled = self.expired = False
-
-        if 'r' in flags:
-            self.revoked = True
-        if 'd' in flags:
-            self.disabled = True
-        if 'e' in flags:
-            self.expired = True
-
-    def __repr__(self):
-        return 'Identity {}'.format(self.uid)
-
-    def __str__(self):
-        return repr(self)
-
-
-class KeyServer(object):
-    """
-    Keyserver object used for search queries.
-    """
-
-    def __init__(self, host, port=11371, proxies=None, headers=None, verify=True):
-        if host.startswith('hkp://') or host.startswith('hkps://'):
-            host = host.replace("hkp", "http", 1)
-            if host.startswith('https'):
-                if port == 11371:
-                    port = 443
-        else:
-            raise Exception("Unsupported protocol, hkp|hkps are supported.")
-        self.host = host
-        self.port = port
-        # Buildup Session
+    def __init__(
+        self,
+        host: str,
+        proxies: dict = {},
+        headers: dict = {},
+        verify: bool = True
+    ) -> 'Client':
+        if not host.startswith(self.supported_protocols):
+            raise UnsupportedProtocol
+        self.protocol = Client._get_protocol(host)
+        self.url = self._get_url(host)
         self.session = requests.session()
         self.session.headers = headers
         self.session.proxies = proxies
-        if host.endswith("hkps.pool.sks-keyservers.net"):
-            verify = utils.ca().pem
         self.session.verify = verify
 
-    def __parse_index(self, response):
+    @staticmethod
+    def uri_validator(uri: str) -> Tuple[str, bool]:
+        try:
+            result = urlparse(uri)
+            return result.scheme, all([result.scheme, result.netloc])
+        except ValueError:
+            return "", False
+
+    @staticmethod
+    def _get_protocol(host: str) -> Protocol:
+        protocol, is_valid = Client.uri_validator(host)
+        if is_valid:
+            return Protocol(protocol)
+        raise MalformedURL
+
+    def _get_url(self, host: str) -> str:
+        if self.protocol is Protocol.HKP:
+            return host.replace(self.protocol.value, 'http', 1)
+        elif (
+            self.protocol is Protocol.HKPS or
+            self.protocol is Protocol.VKS or
+            self.protocol is Protocol.WKS
+        ):
+            return host.replace(self.protocol.value, 'https', 1)
+        raise UnsupportedProtocol
+
+    def get_url(self, path: str) -> str:
+        return urljoin(
+            self.url,
+            path
+        )
+
+
+class VKSClient(Client):
+    """
+        VKS Client for Hagrid --> https://keys.openpgp.org/about/api
+    """
+    v1 = '/vks/v1'
+
+    def __init__(self, host, **kwargs) -> 'VKSClient':
+        super().__init__(host, **kwargs)
+
+    @staticmethod
+    def no_legaxy_0x(id: str):
+        if id.startswith("0x"):
+            raise LookupError
+
+    def get_by_fingerprint(self, fingerprint: str) -> Union[VKSKey, None]:
+        VKSClient.no_legaxy_0x(fingerprint)
+        url = self.get_url(
+            '{0}/by-fingerprint/{1}'.format(self.v1, fingerprint)
+        )
+        return VKSKey(url, self.session, fingerprint=fingerprint)
+
+    def get_by_keyid(self, keyid: str) -> Union[VKSKey, None]:
+        VKSClient.no_legaxy_0x(keyid)
+        url = self.get_url(
+            '{0}/by-keyid/{1}'.format(self.v1, quote(keyid))
+        )
+        return VKSKey(url, self.session, keyid=keyid)
+
+    def get_by_email(self, email: str) -> Union[VKSKey, None]:
+        url = self.get_url(
+            '{0}/by-email/{1}'.format(self.v1, quote(email))
+        )
+        return VKSKey(url, self.session, uid=email)
+
+    def upload(self, key: Union[VKSKey, str, bytes]):
+        pass
+
+
+class HKPClient(Client):
+    """
+        HKP/HKPS Client object used for search queries.
+    """
+
+    def __init__(self, host: str, verify: bool = True, **kwargs):
+        if host.endswith("hkps.pool.sks-keyservers.net"):
+            kwargs['verify'] = CA().pem
+        super().__init__(host, **kwargs)
+
+    def __parse_index(self, response) -> List[Union[HKPKey, None]]:
         """
         Parse machine readable index response.
         """
@@ -187,14 +124,18 @@ class KeyServer(object):
         for line in iter(lines):
             items = line.split(':')
             if 'pub' in items[0]:
-                key = Key(self.host, self.port, *
-                          items[1:], session=self.session)
+                key = HKPKey(self.url, *items[1:], session=self.session)
                 result.append(key)
             if 'uid' in items[0] and key:
                 key.identities.append(Identity(*items[1:]))
         return result
 
-    def search(self, query, exact=False, nm=False):
+    def search(
+        self,
+        query: str,
+        exact: bool = False,
+        nm: bool = False
+    ) -> List[Union[HKPKey, None]]:
         """
         Searches for given query, returns list of key objects.
         """
@@ -209,26 +150,25 @@ class KeyServer(object):
             'exact': exact and 'on' or 'off',
         }
 
-        request_url = '{}:{}/pks/lookup'.format(self.host, self.port)
+        url = self.get_url('/pks/lookup')
         response = self.session.get(
-            request_url,
+            url,
             params=params)
         if response.ok:
             response = response.text
         elif response.status_code == requests.codes.not_found:
             return None
         else:
-            raise Exception(
-                '{}\nRequest URL: {}\nResponse:\n{}'.format(response.status_code, response.request.url, response.text))
+            response.raise_for_status()
         return self.__parse_index(response)
 
-    def add(self, key):
+    def add(self, key: Union[HKPKey, str, bytes]):
         """
         Upload key to the keyserver.
         """
-        request_url = '{}:{}/pks/add'.format(self.host, self.port)
+        url = self.get_url('/pks/add')
         data = {'keytext': key}
         response = self.session.post(
-            request_url,
+            url,
             data=data)
         response.raise_for_status()
