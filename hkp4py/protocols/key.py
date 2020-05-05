@@ -1,6 +1,8 @@
-from ..utils import cached_property
-from requests import Session
 from typing import Union
+
+from requests import Session
+
+from ..utils import cached_property
 
 
 class IKey(object):
