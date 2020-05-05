@@ -2,7 +2,8 @@ from typing import Union
 
 from requests import Session, codes
 
-from ..exceptions import NoKeyResponse
+import hkp4py.exceptions as exceptions
+
 from .key import IKey
 
 
@@ -45,7 +46,7 @@ class VKSKey(IKey):
                 not key.startswith(self._begin_header) or
                 not key.endswith(self._end_header)
             ):
-                raise NoKeyResponse
+                raise exceptions.NoKeyResponse
             if blob:
                 return bytes(key.encode("utf-8"))
             else:
