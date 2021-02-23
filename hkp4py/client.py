@@ -15,7 +15,7 @@ except ImportError:
 import hkp4py.utils as utils
 
 
-__all__ = ['Key', 'Identity', 'KeyServer']
+__all__ = ['Key', 'Identity', 'KeyServer', 'HTTPClientError']
 
 # Loosely taken from RFC2440 (http://tools.ietf.org/html/rfc2440#section-9.1)
 ALGORITHMS = {
@@ -31,6 +31,11 @@ ALGORITHMS = {
     21: 'Reserved for Diffie-Hellman',
     22: 'EdDSA',
 }
+
+
+class HTTPClientError(Exception):
+    """Thrown by Keyserver.search if any 4xx Error Code is reported."""
+    pass
 
 
 class Key(object):
@@ -217,9 +222,14 @@ class KeyServer(object):
             response = response.text
         elif response.status_code == requests.codes.not_found:
             return None
+        elif response.status_code >= 200 and response.status_code < 300:
+            return None
+        elif response.status_code >= 400 and response.status_code < 500:
+            # Distinguish between client errors and server errors / redirects
+            raise HTTPClientError
         else:
-            raise Exception(
-                '{}\nRequest URL: {}\nResponse:\n{}'.format(response.status_code, response.request.url, response.text))
+            raise Exception('{}\nRequest URL: {}\nResponse:\n{}'.format(
+                response.status_code, response.request.url, response.text))
         return self.__parse_index(response)
 
     def add(self, key):
