@@ -2,5 +2,5 @@
 Python HKP client module
 """
 
-from hkp4py.client import Key, Identity, KeyServer
-__all__ = ['Key', 'Identity', 'KeyServer']
+from vendor.hkp4py.client import Key, Identity, KeyServer, HTTPClientError
+__all__ = ['Key', 'Identity', 'KeyServer', 'HTTPClientError']
